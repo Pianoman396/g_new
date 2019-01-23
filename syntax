@@ -1,0 +1,69 @@
+// Load modules
+const   gulp            = require("gulp"),
+        plumber         = require("gulp-plumber"),
+        autoprefixer    = require("gulp-autoprefixer"),
+        sass            = require("gulp-sass"),
+        minifycss       = require("gulp-clean-css"),
+        eslint          = require("gulp-eslint"),
+        gutil           = require("gulp-util"),
+        uglify          = require("gulp-uglify-es").default,
+        sourcemaps      = require("gulp-sourcemaps"),
+        imagemin        = require("gulp-imagemin"),
+        rename          = require("gulp-rename"),
+        concat          = require("gulp-concat"),
+        notify          = require("gulp-notify"),
+        changed         = require('gulp-changed')
+        // imageminJpegAutorotate = require('jpeg-autorotate');
+
+
+        // Working dirs
+        dwd             = "src",
+        rwd             = "dist";
+
+const onError = function (err) {
+  console.log(err);
+};
+
+// Sass task
+gulp.task("sass", function () {
+  return gulp.src(`${dwd}/**/*.scss`)
+    .pipe(sourcemaps.init())
+    .pipe(sass().on("error", sass.logError))
+    .pipe(autoprefixer("last 4 versions"))
+    .pipe(concat("app.css"))
+    .pipe(minifycss())
+    .pipe(sourcemaps.write("."))
+    .pipe(gulp.dest(`styles/${rwd}/`));
+});
+
+//Js task
+gulp.task("js", function () {
+  return gulp.src(`${dwd}/js/**/*.js`)
+    .pipe(plumber({
+      errorHandler: onError
+    }))
+    .pipe(eslint({fix:true}))
+    .pipe(eslint.format())
+    .pipe(concat("app.js"))
+    .pipe(uglify())
+    .pipe(gulp.dest(`scripts/${rwd}/`));
+});
+
+//Minifying images
+gulp.task("imagemin", () => {
+  return gulp.src(`images/src/**/*`)
+  .pipe(changed(`${rwd}/images/dist`))
+  .pipe(imagemin())
+  .pipe(gulp.dest(`images/${rwd}/`))
+})
+
+// Watch
+gulp.task("watch", function () {
+  gulp.watch(`styles/${dwd}/**/*.scss`, gulp.series("sass"));
+  gulp.watch(`scripts/${dwd}/**/*.js`, gulp.series("js"));
+  gulp.watch(`images/${dwd}/**/*`, gulp.series("imagemin"));
+  return;
+});
+
+// Run
+gulp.task("default", gulp.series(["sass", "js", "imagemin", "watch"])); //"js",
